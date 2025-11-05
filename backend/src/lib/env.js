@@ -10,7 +10,7 @@ const requiredEnvVars = [
   "INNGEST_EVENT_KEY",
   "INNGEST_SIGNING_KEY",
   "STREAM_API_KEY",
-  "STREAM_API_SECRET"
+  "STREAM_API_SECRET",
 ];
 
 const missing = requiredEnvVars.filter((key) => !process.env[key]);
@@ -26,4 +26,11 @@ export const ENV = {
   PORT: process.env.PORT,
   DB_URL: process.env.DB_URL,
   NODE_ENV: process.env.NODE_ENV,
+  //  CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
+  //  CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY ,
+  // clerk use them in there code we don't need them
+  INNGEST_EVENT_KEY: process.env.INNGEST_EVENT_KEY,
+  INNGEST_SIGNING_KEY: process.env.INNGEST_SIGNING_KEY,
+  STREAM_API_KEY: process.env.STREAM_API_KEY,
+  STREAM_API_SECRETY: process.env.STREAM_API_SECRETY,
 };
