@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 // reading the enviroment files
 dotenv.config();
 
-const requiredEnvVars = ['PORT','DB_URL'];
+const requiredEnvVars = ['PORT','DB_URL', 'NODE_ENV'];
 const missing = requiredEnvVars.filter((key)=> !process.env[key]);
 
 if(missing.length > 0){
@@ -13,4 +13,5 @@ if(missing.length > 0){
 export const ENV = {
     PORT: process.env.PORT,
     DB_URL: process.env.DB_URL,
+    NODE_ENV: process.env.NODE_ENV,
 }
