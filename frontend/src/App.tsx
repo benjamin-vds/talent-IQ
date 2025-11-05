@@ -1,4 +1,4 @@
-import "./App.css";
+
 import {
   SignedIn,
   SignedOut,
@@ -13,7 +13,7 @@ function App() {
       <h1>Welcome to the app</h1>
       <SignedOut>
         <SignInButton mode="modal" >
-          <button className="">Sign up please</button>
+          <button className="">Login</button>
         </SignInButton>
       </SignedOut>
       <SignedIn>
