@@ -3,23 +3,25 @@ import express from "express";
 import path from "path";
 
 // better way to import
-import {ENV} from "./lib/env.js"; 
+import { ENV } from "./lib/env.js";
 
 // just importing but best practice is to import in all the files
 //import dotenv from "dotenv";
 //dotenv.config();
 
+import { connectDB } from "./lib/db.js";
+
 const app = express();
 
 const __dirname = path.resolve();
 console.log(__dirname);
-app.get("/health", (req,res) => {
-    res.status(200).json({msg: "api is up and running"});
-})
+app.get("/health", (req, res) => {
+  res.status(200).json({ msg: "api is up and running" });
+});
 
-app.get("/books", (req,res) => {
-    res.status(200).json({msg: "api is up and running"});
-})
+app.get("/books", (req, res) => {
+  res.status(200).json({ msg: "api is up and running" });
+});
 
 // make our web app ready for deployment
 if (ENV.NODE_ENV === "production") {
@@ -30,4 +32,15 @@ if (ENV.NODE_ENV === "production") {
   });
 }
 
-app.listen(ENV.PORT, () => console.log(`Server is running on port ${ENV.PORT}`))
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(ENV.PORT, () => {
+      console.log(`Server is running on port ${ENV.PORT}`);
+    });
+  } catch (error) {
+    console.error("💥 Error starting the server");
+  }
+};
+
+startServer();
