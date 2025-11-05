@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 // reading the enviroment files
 dotenv.config();
 
-const requiredEnvVars = ['PORT','DB_URL', 'NODE_ENV'];
+const requiredEnvVars = ['DB_URL', 'NODE_ENV'];
 const missing = requiredEnvVars.filter((key)=> !process.env[key]);
 
 if(missing.length > 0){
