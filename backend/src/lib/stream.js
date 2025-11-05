@@ -2,7 +2,7 @@ import {StreamChat} from "stream-chat";
 import { ENV } from "./env.js";
 
 const apiKey =ENV.STREAM_API_KEY;
-const apiSecret = ENV.STREAM_API_SECRETY;
+const apiSecret = ENV.STREAM_API_SECRET;
 
 export const chatClient = StreamChat.getInstance(apiKey,apiSecret);
 
