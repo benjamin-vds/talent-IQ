@@ -33,7 +33,7 @@ app.use(clerkMiddleware());
 app.use("/api/inngest", serve({ client: inngest, functions }));
 
 // loading routes for the chats
-app.get("/api/chat", chatRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ message: "api is up and running" });
