@@ -61,11 +61,17 @@ export async function createSession(req, res) {
           const channel = chatClient.channel("messaging", callId);
           await channel.delete();
         } catch (cleanupError) {
-          console.error("Failed to cleanup chat channel:", cleanupError.message);
+          console.error(
+            "Failed to cleanup chat channel:",
+            cleanupError.message
+          );
         }
       }
     } catch (rollback) {
-      console.error("Failed rollback on error of createSession: ",rollback.message);
+      console.error(
+        "Failed rollback on error of createSession: ",
+        rollback.message
+      );
     }
   }
 }
@@ -181,17 +187,26 @@ export async function endSession(req, res) {
     if (session.status === "completed") {
       return res.status(400).json({ message: "Session is already completed" });
     }
+
+    // delete stream video call
+    try {
+      const call = streamClient.video.call("default", session.callId);
+      await call.delete({ hard: true });
+    } catch (externalError) {
+      console.error("Stream could not being deleted: ", externalError.members);
+    }
+
+    // delete stream chat channel
+    try {
+      const channel = chatClient.channel("messaging", session.callId);
+      await channel.delete();
+    } catch (externalError) {
+      console.error("Chat could not being deleted", externalError.message);
+    }
+
     // first complete session in db before closing the others
     session.status = "completed";
     await session.save();
-
-    // delete stream video call
-    const call = streamClient.video.call("default", session.callId);
-    await call.delete({ hard: true });
-
-    // delete stream chat channel
-    const channel = chatClient.channel("messaging", session.callId);
-    await channel.delete();
 
     res.status(200).json({ session, message: "Session ended successfully" });
   } catch (error) {
