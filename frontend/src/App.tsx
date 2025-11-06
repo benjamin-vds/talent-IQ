@@ -22,6 +22,7 @@ function App() {
           path="/problems"
           element={isSignedIn ? <ProblemsPage /> : <Navigate to={"/"} />}
         />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster toastOptions={{ duration: 3000 }} />
     </>
