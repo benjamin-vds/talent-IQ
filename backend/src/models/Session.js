@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const sessionSchema = new mongoose.Schema({
   problem: {
     type: String,
-    requires: true,
+    required: true,
   },
   difficulty: {
     type: String,
@@ -22,14 +22,14 @@ const sessionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enume: ["active", "completed"],
+    enum: ["active", "completed"],
     default: "active"
   },
   callId: {
     type: String,
     default: ""
   }
-});
+}, {timestamps: true});
 
 const Session = mongoose.model("Session", sessionSchema);
 

@@ -1,5 +1,6 @@
 import { chatClient, streamClient } from "../lib/stream.js";
 import Session from "../models/Session.js";
+import  {randomUUID} from 'crypto';
 
 export async function createSession(req, res) {
   try {
@@ -12,10 +13,8 @@ export async function createSession(req, res) {
     }
 
     // generate a unique call id for stream video
-    const callId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const callId = `session_${randomUUID()}`;
 
-    // create session in db
-    const session = await Session.create({ problem, difficulty, host: userId, callId });
 
     // create stream video call
     await streamClient.video.call("default", callId).getOrCreate({
@@ -33,6 +32,10 @@ export async function createSession(req, res) {
     });
 
     await channel.create();
+
+    // create session in db after the external service where created
+    const session = await Session.create({ problem, difficulty, host: userId, callId });
+
 
     res.status(201).json({ session });
   } catch (error) {
@@ -113,11 +116,12 @@ export async function joinSession(req, res) {
     // check if session is already full - has a participant
     if (session.participant) return res.status(409).json({ message: "Session is full" });
 
-    session.participant = userId;
-    await session.save();
-
     const channel = chatClient.channel("messaging", session.callId);
     await channel.addMembers([clerkId]);
+
+    // add it at the end so if chat fails no false data stored
+    session.participant = userId;
+    await session.save();
 
     res.status(200).json({ session });
   } catch (error) {
@@ -144,6 +148,9 @@ export async function endSession(req, res) {
     if (session.status === "completed") {
       return res.status(400).json({ message: "Session is already completed" });
     }
+    // first complete session in db before closing the others 
+    session.status = "completed";
+    await session.save();
 
     // delete stream video call
     const call = streamClient.video.call("default", session.callId);
@@ -153,8 +160,7 @@ export async function endSession(req, res) {
     const channel = chatClient.channel("messaging", session.callId);
     await channel.delete();
 
-    session.status = "completed";
-    await session.save();
+    
 
     res.status(200).json({ session, message: "Session ended successfully" });
   } catch (error) {
