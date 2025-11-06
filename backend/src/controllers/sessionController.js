@@ -1,6 +1,6 @@
 import { chatClient, streamClient } from "../lib/stream.js";
 import Session from "../models/Session.js";
-import  {randomUUID} from 'crypto';
+import { randomUUID } from "crypto";
 
 export async function createSession(req, res) {
   // generate a unique call id for stream video
@@ -12,12 +12,18 @@ export async function createSession(req, res) {
     const clerkId = req.user.clerkId;
 
     if (!problem || !difficulty) {
-      return res.status(400).json({ message: "Problem and difficulty are required" });
+      return res
+        .status(400)
+        .json({ message: "Problem and difficulty are required" });
     }
 
-    
     // we will need to set session because it will be bassing in streamcliente
-    const session = await Session.create({ problem, difficulty, host: userId, callId });
+    const session = await Session.create({
+      problem,
+      difficulty,
+      host: userId,
+      callId,
+    });
 
     // create stream video call
     await streamClient.video.call("default", callId).getOrCreate({
@@ -36,15 +42,31 @@ export async function createSession(req, res) {
 
     await channel.create();
 
-    
-
-
     res.status(201).json({ session });
   } catch (error) {
-    console.log("Error in createSession controller:", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
-    const exist = await Session.findOne({callId})
-    if(exist) await Session.deleteOne({callId})
+    try {
+      console.error("Error in createSession controller:", error.message);
+      res.status(500).json({ message: "Internal Server Error" });
+      const exist = await Session.findOne({ callId });
+      if (exist) {
+        await Session.deleteOne({ callId });
+        try {
+          await streamClient.video
+            .call("default", callId)
+            .delete({ hard: true });
+        } catch (cleanupError) {
+          console.error("Failed to cleanup video call:", cleanupError.message);
+        }
+        try {
+          const channel = chatClient.channel("messaging", callId);
+          await channel.delete();
+        } catch (cleanupError) {
+          console.error("Failed to cleanup chat channel:", cleanupError.message);
+        }
+      }
+    } catch (rollback) {
+      console.error("Failed rollback on error of createSession: ",rollback.message);
+    }
   }
 }
 
@@ -110,15 +132,20 @@ export async function joinSession(req, res) {
     if (!session) return res.status(404).json({ message: "Session not found" });
 
     if (session.status !== "active") {
-      return res.status(400).json({ message: "Cannot join a completed session" });
+      return res
+        .status(400)
+        .json({ message: "Cannot join a completed session" });
     }
 
     if (session.host.toString() === userId.toString()) {
-      return res.status(400).json({ message: "Host cannot join their own session as participant" });
+      return res
+        .status(400)
+        .json({ message: "Host cannot join their own session as participant" });
     }
 
     // check if session is already full - has a participant
-    if (session.participant) return res.status(409).json({ message: "Session is full" });
+    if (session.participant)
+      return res.status(409).json({ message: "Session is full" });
 
     const channel = chatClient.channel("messaging", session.callId);
     await channel.addMembers([clerkId]);
@@ -145,14 +172,16 @@ export async function endSession(req, res) {
 
     // check if user is the host
     if (session.host.toString() !== userId.toString()) {
-      return res.status(403).json({ message: "Only the host can end the session" });
+      return res
+        .status(403)
+        .json({ message: "Only the host can end the session" });
     }
 
     // check if session is already completed
     if (session.status === "completed") {
       return res.status(400).json({ message: "Session is already completed" });
     }
-    // first complete session in db before closing the others 
+    // first complete session in db before closing the others
     session.status = "completed";
     await session.save();
 
@@ -163,8 +192,6 @@ export async function endSession(req, res) {
     // delete stream chat channel
     const channel = chatClient.channel("messaging", session.callId);
     await channel.delete();
-
-    
 
     res.status(200).json({ session, message: "Session ended successfully" });
   } catch (error) {
