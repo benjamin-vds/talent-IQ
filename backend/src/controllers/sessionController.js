@@ -3,6 +3,9 @@ import Session from "../models/Session.js";
 import  {randomUUID} from 'crypto';
 
 export async function createSession(req, res) {
+  // generate a unique call id for stream video
+  const callId = `session_${randomUUID()}`;
+
   try {
     const { problem, difficulty } = req.body;
     const userId = req.user._id;
@@ -12,9 +15,9 @@ export async function createSession(req, res) {
       return res.status(400).json({ message: "Problem and difficulty are required" });
     }
 
-    // generate a unique call id for stream video
-    const callId = `session_${randomUUID()}`;
-
+    
+    // we will need to set session because it will be bassing in streamcliente
+    const session = await Session.create({ problem, difficulty, host: userId, callId });
 
     // create stream video call
     await streamClient.video.call("default", callId).getOrCreate({
@@ -33,14 +36,15 @@ export async function createSession(req, res) {
 
     await channel.create();
 
-    // create session in db after the external service where created
-    const session = await Session.create({ problem, difficulty, host: userId, callId });
+    
 
 
     res.status(201).json({ session });
   } catch (error) {
     console.log("Error in createSession controller:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
+    const exist = await Session.findOne({callId})
+    if(exist) await Session.deleteOne({callId})
   }
 }
 
